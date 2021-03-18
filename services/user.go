@@ -10,11 +10,11 @@ import (
 	"github.com/deharahawa/go-studies/pb"
 )
 
-// type UserServiceServer interface {
-// 	AddUser(context.Context, *User) (*User, error)
-// 	AddUserVerbose(*User, UserService_AddUserVerboseServer) error
-// 	AddUsers(UserService_AddUsersServer) error
-// 	mustEmbedUnimplementedUserServiceServer()
+// type UserServiceClient interface {
+// 	AddUser(ctx context.Context, in *User, opts ...grpc.CallOption) (*User, error)
+// 	AddUserVerbose(ctx context.Context, in *User, opts ...grpc.CallOption) (UserService_AddUserVerboseClient, error)
+// 	AddUsers(ctx context.Context, opts ...grpc.CallOption) (UserService_AddUsersClient, error)
+// 	AddUserStreamBidi(ctx context.Context, opts ...grpc.CallOption) (UserService_AddUserStreamBidiClient, error)
 // }
 
 type UserService struct {
@@ -98,6 +98,28 @@ func (*UserService) AddUsers(stream pb.UserService_AddUsersServer) error {
 			Email: req.GetEmail(),
 		})
 		fmt.Println("Adding", req.GetName())
+	}
+
+}
+
+func (*UserService) AddUserStreamBidi(stream pb.UserService_AddUserStreamBidiServer) error {
+
+	for {
+		req, err := stream.Recv()
+		if err == io.EOF {
+			return nil
+		}
+		if err != nil {
+			log.Fatalf("Error receiving stream from the client: %v", err)
+		}
+
+		err = stream.Send(&pb.UserResultStream{
+			Status: "Added",
+			User:   req,
+		})
+		if err != nil {
+			log.Fatalf("Error sending stream to the client: %v", err)
+		}
 	}
 
 }
